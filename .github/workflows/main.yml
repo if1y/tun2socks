@@ -2,7 +2,10 @@ name: Build Rust for Android ARM64
 
 # 手动触发执行
 on:
-  workflow_dispatch:android-arm64:
+  workflow_dispatch:
+
+jobs:
+  build-android-arm64:
     runs-on: ubuntu-latest
     
     steps:
@@ -29,7 +32,8 @@ on:
       run: |
         mkdir -p .cargo
         cat > .cargo/config.toml << EOF
-        [target.aarch64-linux-androiANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
+        [target.aarch64-linux-android]
+        linker = "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
         
         [build]
         target = "aarch64-linux-android"
@@ -53,10 +57,12 @@ on:
         restore-keys: |
           ${{ runner.os }}-target-android-arm64-
     
-    - name: Build for
+    - name: Build for Android ARM64
+      run: |
         export CC_aarch64_linux_android=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
         export CXX_aarch64_linux_android=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++
-        export AR_aarch64_linux_android=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/ll_TARGET_AARCH64_LINUX_ANDROID_LINKER=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
+        export AR_aarch64_linux_android=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
+        export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
         
         cargo build --release --target aarch64-linux-android
     
