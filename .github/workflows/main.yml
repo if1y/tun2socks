@@ -32,13 +32,17 @@ jobs:
       uses: nttld/setup-ndk@v1
       with:
         ndk-version: r25c
-        add-to-path: falsed h Android 设置 Android 交叉编译环境变量
+        add-to-path: false
+    
+    - name: Build native dependencies
+      run: |
+        # 设置 Android 交叉编译环境变量
         export ANDROID_NDK=$ANDROID_NDK_ROOT
         export TOOLCHAIN=$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64
         export TARGET=aarch64-linux-android
         export API=21
         export AR=$TOOLCHAIN/bin/llvm-ar
-        export CC=$TOOLCHAIN/bin/$TARGET$=$CC
+        export CC=$TOOLCHAIN/bin/$TARGET$API-clang
         export CXX=$TOOLCHAIN/bin/$TARGET$API-clang++
         export LD=$TOOLCHAIN/bin/ld
         export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
@@ -46,19 +50,26 @@ jobs:
         
         # 创建构建目录
         mkdir -p build-android
-        c 如果 hev-socks5-tunnel 是一个 git submodule 或需要克隆
+        cd build-android
+        
+        # 如果 hev-socks5-tunnel 是一个 git submodule 或需要克隆
         if [ ! -d "../third-party/hev-socks5-tunnel" ]; then
           # 根据实际情况调整路径和仓库地址
           git clone https://github.com/heiher/hev-socks5-tunnel.git hev-socks5-tunnel
-          tunnel
+          cd hev-socks5-tunnel
         else
           cd ../third-party/hev-socks5-tunnel
         fi
         
         # 使用 make 构建（根据项目实际构建方式调整）
         make clean || true
-        make CROSS_PREFIX=$TARGET$API- CC=$CC CXX=$CXX AR=$AR STRIP 复制编译好的库文件到 Rust 能 -p ../../target/aarch64-linux-android/release/deps
-        find . -name "*.a" -exec cp {} ../../target/aarch64-linux-android/release/cd ../..
+        make CROSS_PREFIX=$TARGET$API- CC=$CC CXX=$CXX AR=$AR STRIP=$STRIP
+        
+        # 复制编译好的库文件到 Rust 能找到的位置
+        mkdir -p ../../target/aarch64-linux-android/release/deps
+        find . -name "*.a" -exec cp {} ../../target/aarch64-linux-android/release/deps/ \;
+        
+        cd ../..
     
     - name: Setup Cargo config for Android
       run: |
@@ -69,10 +80,6 @@ jobs:
         
         [build]
         target = "aarch64-linux-android"
-        
-        # 添加库搜索路径
-        [target.env]
-        RUSTFLAGS = "-L native=target/aarch64-linux-android/release/deps"
         EOF
     
     - name: Cache cargo registry
@@ -108,11 +115,12 @@ jobs:
     - name: Prepare artifacts
       run: |
         mkdir -p android-arm64-artifacts
-        要的可执行文件
-        if [ -f "target/aarch64-linux-android/release/tun2socks" ]; then
-          cp target/aarch64-linux-androi android-arm64-artifacts/
-        fi
         
+        # 复制主要的可执行文件
+        if [ -f "target/aarch64-linux-android/release/tun2socks" ]; then
+          cp target/aarch64-linux-android/release/tun2socks android-arm64-artifacts/
+        fi
+
         # 复制所有编译好的二进制文件
         find target/aarch64-linux-android/release -type f -executable -not -path "*/deps/*" -not -name "*.so" -not -name "*.d" | while read file; do
           if [[ -f "$file" && ! "$file" =~ \.(so|d)$ ]]; then
@@ -127,10 +135,8 @@ jobs:
         
         # 创建构建信息文件
         echo "Build Date: $(date)" > android-arm64-artifacts/build_info.txt
-        echo "Target: aarch64-linux-android (Android ARM64 v8a)" >> android-arm64-artifacts/build_info.txt
-        echo "Commit: $GITHUB_SHA" >> android-arm64-artifacts/build_info.txt
-        
-        # 显示编译输出内容
+        echo "Target: aarch64-linux-androi)" >> android-arm64-artifacts/build_info.txt
+        echo "Commit: $GITHUB_SHA" >> android-arm64-artifacts/build_info.txt编译输出内容
         ls -la android-arm64-artifacts/
     
     - name: Upload artifacts
